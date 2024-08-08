@@ -48,4 +48,10 @@ public class LearningLessonController {
     public LearningLessonVO queryByCourseId(@PathVariable("courseId") Long courseId) {
         return lessonService.queryByCourseId(courseId);
     }
+
+    @GetMapping("/lessons/{courseId}/valid")
+    @ApiOperation("检查课程是否有效")
+    public Long isLessonValid(@PathVariable("courseId") Long courseId) {
+        return lessonService.isLessonValid(courseId);
+    }
 }

@@ -22,6 +22,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.jni.User;
+import org.checkerframework.checker.index.qual.LTEqLengthOf;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -170,5 +171,22 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         vo.setCourseCoverUrl(course.getCoverUrl());
         vo.setSections(course.getSectionNum());
         return vo;
+    }
+
+    @Override
+    public Long isLessonValid(Long courseId) {
+        Long userId = UserContext.getUser();
+        LearningLesson lesson = lambdaQuery()
+                .eq(LearningLesson::getUserId, userId)
+                .eq(LearningLesson::getCourseId, courseId)
+                .one();
+        if (lesson == null) {
+            return null;
+        }
+        CourseFullInfoDTO course = courseClient.getCourseInfoById(courseId, false, false);
+        if (LocalDateTime.now().isAfter(course.getPurchaseEndTime())) {
+            return null;
+        }
+        return lesson.getId();
     }
 }
