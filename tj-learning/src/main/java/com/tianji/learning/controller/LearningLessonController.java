@@ -35,4 +35,10 @@ public class LearningLessonController {
     public PageDTO<LearningLessonVO> queryMyLessons(@Validated PageQuery query) {
         return lessonService.queryMyLessons(query);
     }
+
+    @ApiOperation("查询我正在学习的课程")
+    @GetMapping("/now")
+    public LearningLessonVO queryMyCurrentLessons() {
+        return lessonService.queryMyCurrentLessons();
+    }
 }

@@ -31,4 +31,10 @@ public interface ILearningLessonService extends IService<LearningLesson> {
      * @return
      */
     PageDTO<LearningLessonVO> queryMyLessons(PageQuery query);
+
+    /**
+     * 查询我正在学习的课程
+     * @return
+     */
+    LearningLessonVO queryMyCurrentLessons();
 }
