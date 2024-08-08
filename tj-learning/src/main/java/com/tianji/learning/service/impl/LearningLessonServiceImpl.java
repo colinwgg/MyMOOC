@@ -1,5 +1,6 @@
 package com.tianji.learning.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tianji.api.client.course.CatalogueClient;
 import com.tianji.api.client.course.CourseClient;
@@ -188,5 +189,14 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
             return null;
         }
         return lesson.getId();
+    }
+
+    @Override
+    public void deleteCourseFromLesson(Long courseId) {
+        Long userId = UserContext.getUser();
+        lambdaUpdate()
+                .eq(LearningLesson::getUserId, userId)
+                .eq(LearningLesson::getCourseId, courseId)
+                .remove();
     }
 }

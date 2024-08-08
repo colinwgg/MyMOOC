@@ -35,4 +35,20 @@ public class LessonChangeListener {
         log.debug("监听到用户{}的订单{}，需要添加课程{}到课表中", dto.getUserId(), dto.getOrderId(), dto.getCourseIds());
         learningLessonService.addUserLessons(dto.getUserId(), dto.getCourseIds());
     }
+
+    @RabbitListener(
+            bindings = @QueueBinding(
+                    value = @Queue(value = "learning.lesson.refund.queue", durable = "true"),
+                    exchange = @Exchange(name = MqConstants.Exchange.ORDER_EXCHANGE, type = ExchangeTypes.TOPIC),
+                    key = MqConstants.Key.ORDER_REFUND_KEY
+            )
+    )
+    public void listenLessonRefund(OrderBasicDTO dto) {
+        if (dto == null || dto.getUserId() == null || CollUtils.isEmpty(dto.getCourseIds())) {
+            log.error("接收到MQ消息有误，订单数据为空");
+            return;
+        }
+        log.debug("监听到用户{}的订单{}，需要删除课程{}", dto.getUserId(), dto.getOrderId(), dto.getCourseIds());
+        learningLessonService.deleteCourseFromLesson(dto.getCourseIds().get(0));
+    }
 }

@@ -9,11 +9,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * <p>
@@ -53,5 +49,11 @@ public class LearningLessonController {
     @ApiOperation("检查课程是否有效")
     public Long isLessonValid(@PathVariable("courseId") Long courseId) {
         return lessonService.isLessonValid(courseId);
+    }
+
+    @DeleteMapping("/{courseId}")
+    @ApiOperation("根据courseId删除课程")
+    public void deleteCourseFromLesson(@PathVariable("courseId") Long courseId) {
+        lessonService.deleteCourseFromLesson(courseId);
     }
 }

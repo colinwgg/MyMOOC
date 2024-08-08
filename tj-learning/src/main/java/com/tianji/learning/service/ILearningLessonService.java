@@ -51,4 +51,10 @@ public interface ILearningLessonService extends IService<LearningLesson> {
      * @return
      */
     Long isLessonValid(Long courseId);
+
+    /**
+     * 根据courseId删除课程
+     * @param courseId
+     */
+    void deleteCourseFromLesson(Long courseId);
 }
