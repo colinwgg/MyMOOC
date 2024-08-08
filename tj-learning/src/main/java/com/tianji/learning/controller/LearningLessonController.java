@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Api(tags = "我的课表相关接口")
 @RestController
-@RequestMapping("//lessons")
+@RequestMapping("/lessons")
 @RequiredArgsConstructor
 public class LearningLessonController {
 
@@ -40,5 +41,11 @@ public class LearningLessonController {
     @GetMapping("/now")
     public LearningLessonVO queryMyCurrentLessons() {
         return lessonService.queryMyCurrentLessons();
+    }
+
+    @GetMapping("/{courseId}")
+    @ApiOperation("根据courseId查询课程信息")
+    public LearningLessonVO queryByCourseId(@PathVariable("courseId") Long courseId) {
+        return lessonService.queryByCourseId(courseId);
     }
 }

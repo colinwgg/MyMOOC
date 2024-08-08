@@ -21,6 +21,7 @@ import com.tianji.learning.service.ILearningLessonService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.jni.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -142,6 +143,32 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
             vo.setLatestSectionName(cataSimpleInfoDTO.getName());
             vo.setLatestSectionIndex(cataSimpleInfoDTO.getCIndex());
         }
+        return vo;
+    }
+
+    @Override
+    public LearningLessonVO queryByCourseId(Long courseId) {
+        // 查询learning_lesson
+        Long userId = UserContext.getUser();
+        LearningLesson lesson = lambdaQuery()
+                .eq(LearningLesson::getUserId, userId)
+                .eq(LearningLesson::getCourseId, courseId)
+                .one();
+        if (lesson == null) {
+            return null;
+        }
+
+        // 根据courseId查询课程信息
+        CourseFullInfoDTO course = courseClient.getCourseInfoById(courseId, false, false);
+        if (course == null) {
+            throw new DbException("课程信息不存在");
+        }
+
+        // 封装vo
+        LearningLessonVO vo = BeanUtils.copyBean(lesson, LearningLessonVO.class);
+        vo.setCourseName(course.getName());
+        vo.setCourseCoverUrl(course.getCoverUrl());
+        vo.setSections(course.getSectionNum());
         return vo;
     }
 }
