@@ -20,6 +20,7 @@ import com.tianji.learning.enums.LessonStatus;
 import com.tianji.learning.mapper.LearningLessonMapper;
 import com.tianji.learning.service.ILearningLessonService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import io.swagger.models.auth.In;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.jni.User;
@@ -198,5 +199,16 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
                 .eq(LearningLesson::getUserId, userId)
                 .eq(LearningLesson::getCourseId, courseId)
                 .remove();
+    }
+
+    @Override
+    public Integer countLearningLessonByCourse(Long courseId) {
+        return lambdaQuery()
+                .eq(LearningLesson::getCourseId, courseId)
+                .in(LearningLesson::getStatus,
+                        LessonStatus.LEARNING.getValue(),
+                        LessonStatus.NOT_BEGIN.getValue(),
+                        LessonStatus.FINISHED.getValue())
+                .count();
     }
 }

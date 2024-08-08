@@ -57,4 +57,10 @@ public interface ILearningLessonService extends IService<LearningLesson> {
      * @param courseId
      */
     void deleteCourseFromLesson(Long courseId);
+
+    /**
+     * 统计课程学习人数
+     * @param courseId
+     */
+    Integer countLearningLessonByCourse(Long courseId);
 }

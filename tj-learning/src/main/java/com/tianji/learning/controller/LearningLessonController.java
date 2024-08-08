@@ -56,4 +56,10 @@ public class LearningLessonController {
     public void deleteCourseFromLesson(@PathVariable("courseId") Long courseId) {
         lessonService.deleteCourseFromLesson(courseId);
     }
+
+    @GetMapping("/{courseId}/count")
+    @ApiOperation("统计课程学习人数")
+    public Integer countLearningLessonByCourse(@PathVariable("courseId") Long courseId) {
+        return lessonService.countLearningLessonByCourse(courseId);
+    }
 }
