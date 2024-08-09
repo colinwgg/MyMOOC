@@ -71,4 +71,11 @@ public interface ILearningLessonService extends IService<LearningLesson> {
      * @return
      */
     LearningLesson queryByUserAndCourseId(Long userId, Long courseId);
+
+    /**
+     * 创建学习计划
+     * @param courseId
+     * @param freq
+     */
+    void createLearningPlans(Long courseId, Integer freq);
 }

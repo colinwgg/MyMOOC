@@ -18,6 +18,7 @@ import com.tianji.common.utils.UserContext;
 import com.tianji.learning.domain.po.LearningLesson;
 import com.tianji.learning.domain.vo.LearningLessonVO;
 import com.tianji.learning.enums.LessonStatus;
+import com.tianji.learning.enums.PlanStatus;
 import com.tianji.learning.mapper.LearningLessonMapper;
 import com.tianji.learning.service.ILearningLessonService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -216,6 +217,22 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
     @Override
     public LearningLesson queryByUserAndCourseId(Long userId, Long courseId) {
         return getOne(buildUserIdAndCourseIdWrapper(userId, courseId));
+    }
+
+    @Override
+    public void createLearningPlans(Long courseId, Integer freq) {
+        Long userId = UserContext.getUser();
+        LearningLesson lesson = queryByUserAndCourseId(userId, courseId);
+        if (lesson == null) {
+            throw new DbException("课表信息不存在");
+        }
+        LearningLesson updateLesson = new LearningLesson();
+        updateLesson.setId(lesson.getId());
+        updateLesson.setWeekFreq(freq);
+        if (lesson.getPlanStatus() == PlanStatus.NO_PLAN) {
+            updateLesson.setPlanStatus(PlanStatus.PLAN_RUNNING);
+        }
+        updateById(updateLesson);
     }
 
     private LambdaQueryWrapper<LearningLesson> buildUserIdAndCourseIdWrapper(Long userId, Long courseId) {
