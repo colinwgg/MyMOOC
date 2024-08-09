@@ -63,4 +63,12 @@ public interface ILearningLessonService extends IService<LearningLesson> {
      * @param courseId
      */
     Integer countLearningLessonByCourse(Long courseId);
+
+    /**
+     * 根据userId和courseId查询
+     * @param userId
+     * @param courseId
+     * @return
+     */
+    LearningLesson queryByUserAndCourseId(Long userId, Long courseId);
 }
