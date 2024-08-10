@@ -5,6 +5,7 @@ import com.tianji.common.domain.query.PageQuery;
 import com.tianji.learning.domain.po.LearningLesson;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.tianji.learning.domain.vo.LearningLessonVO;
+import com.tianji.learning.domain.vo.LearningPlanPageVO;
 
 import java.util.List;
 
@@ -78,4 +79,11 @@ public interface ILearningLessonService extends IService<LearningLesson> {
      * @param freq
      */
     void createLearningPlans(Long courseId, Integer freq);
+
+    /**
+     * 查询我的学习计划
+     * @param query
+     * @return
+     */
+    LearningPlanPageVO queryMyPlans(PageQuery query);
 }
