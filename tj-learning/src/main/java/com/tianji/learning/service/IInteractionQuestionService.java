@@ -36,4 +36,11 @@ public interface IInteractionQuestionService extends IService<InteractionQuestio
      * @return
      */
     PageDTO<QuestionVO> queryQuestionPage(QuestionPageQuery query);
+
+    /**
+     * 根据id查询问题详情
+     * @param id
+     * @return
+     */
+    QuestionVO queryQuestionById(Long id);
 }

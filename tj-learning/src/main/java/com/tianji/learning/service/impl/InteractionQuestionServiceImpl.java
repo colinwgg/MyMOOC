@@ -136,4 +136,23 @@ public class InteractionQuestionServiceImpl extends ServiceImpl<InteractionQuest
         }
         return PageDTO.of(page, voList);
     }
+
+    @Override
+    public QuestionVO queryQuestionById(Long id) {
+        InteractionQuestion question = getById(id);
+        if (question == null || question.getHidden()) {
+            return null;
+        }
+        UserDTO userDTO = null;
+        if (!question.getAnonymity()) {
+            userDTO = userClient.queryUserById(question.getUserId());
+        }
+        QuestionVO vo = BeanUtils.copyBean(question, QuestionVO.class);
+        if (userDTO != null) {
+            vo.setUserId(userDTO.getId());
+            vo.setUserName(userDTO.getName());
+            vo.setUserIcon(userDTO.getIcon());
+        }
+        return vo;
+    }
 }
