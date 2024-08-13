@@ -19,4 +19,11 @@ public interface IInteractionQuestionService extends IService<InteractionQuestio
      * @param questionDTO
      */
     void saveQuestion(QuestionFormDTO questionDTO);
+
+    /**
+     * 修改问题
+     * @param id
+     * @param questionDTO
+     */
+    void updateQuestion(Long id, QuestionFormDTO questionDTO);
 }

@@ -5,12 +5,9 @@ import com.tianji.learning.domain.dto.QuestionFormDTO;
 import com.tianji.learning.service.IInteractionQuestionService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
@@ -34,5 +31,11 @@ public class InteractionQuestionController {
     @ApiOperation("新增提问")
     public void saveQuestion(@Valid @RequestBody QuestionFormDTO questionDTO) {
         questionService.saveQuestion(questionDTO);
+    }
+
+    @PutMapping("/{id}")
+    @ApiOperation("修改问题")
+    public void updateQuestion(@ApiParam("要修改的问题id") @PathVariable("id") Long id, @RequestBody QuestionFormDTO questionDTO) {
+        questionService.updateQuestion(id, questionDTO);
     }
 }
