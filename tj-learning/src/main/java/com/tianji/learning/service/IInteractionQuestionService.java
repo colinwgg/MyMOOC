@@ -58,4 +58,11 @@ public interface IInteractionQuestionService extends IService<InteractionQuestio
      * @return
      */
     PageDTO<QuestionAdminVO> queryQuestionPageAdmin(QuestionAdminPageQuery query);
+
+    /**
+     * 管理端隐藏或显示问题
+     * @param id
+     * @param hidden
+     */
+    void hiddenQuestion(Long id, Boolean hidden);
 }

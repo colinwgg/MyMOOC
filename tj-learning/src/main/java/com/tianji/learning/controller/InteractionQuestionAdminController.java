@@ -31,4 +31,10 @@ public class InteractionQuestionAdminController {
     public PageDTO<QuestionAdminVO> queryQuestionPageAdmin(QuestionAdminPageQuery query){
         return questionService.queryQuestionPageAdmin(query);
     }
+
+    @PutMapping("/{id}/hidden/{hidden}")
+    @ApiOperation("管理端隐藏或显示问题")
+    public void hiddenQuestion(@PathVariable Long id, @PathVariable Boolean hidden) {
+        questionService.hiddenQuestion(id, hidden);
+    }
 }

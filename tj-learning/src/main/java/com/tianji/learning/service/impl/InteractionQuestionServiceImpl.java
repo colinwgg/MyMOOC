@@ -268,4 +268,12 @@ public class InteractionQuestionServiceImpl extends ServiceImpl<InteractionQuest
         }
         return PageDTO.of(page, voList);
     }
+
+    @Override
+    public void hiddenQuestion(Long id, Boolean hidden) {
+        InteractionQuestion question = new InteractionQuestion();
+        question.setId(id);
+        question.setHidden(hidden);
+        updateById(question);
+    }
 }
