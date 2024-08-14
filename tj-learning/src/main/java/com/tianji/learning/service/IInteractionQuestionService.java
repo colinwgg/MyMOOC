@@ -65,4 +65,11 @@ public interface IInteractionQuestionService extends IService<InteractionQuestio
      * @param hidden
      */
     void hiddenQuestion(Long id, Boolean hidden);
+
+    /**
+     * 管理端根据id查询问题详情
+     * @param id
+     * @return
+     */
+    QuestionAdminVO queryQuestionByIdAdmin(Long id);
 }

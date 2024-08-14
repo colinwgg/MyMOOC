@@ -1,6 +1,7 @@
 package com.tianji.learning.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tianji.api.cache.CategoryCache;
 import com.tianji.api.client.course.CatalogueClient;
@@ -8,6 +9,7 @@ import com.tianji.api.client.course.CourseClient;
 import com.tianji.api.client.search.SearchClient;
 import com.tianji.api.client.user.UserClient;
 import com.tianji.api.dto.course.CataSimpleInfoDTO;
+import com.tianji.api.dto.course.CourseFullInfoDTO;
 import com.tianji.api.dto.course.CourseSimpleInfoDTO;
 import com.tianji.api.dto.user.UserDTO;
 import com.tianji.common.domain.dto.PageDTO;
@@ -24,12 +26,14 @@ import com.tianji.learning.domain.query.QuestionAdminPageQuery;
 import com.tianji.learning.domain.query.QuestionPageQuery;
 import com.tianji.learning.domain.vo.QuestionAdminVO;
 import com.tianji.learning.domain.vo.QuestionVO;
+import com.tianji.learning.enums.QuestionStatus;
 import com.tianji.learning.mapper.InteractionQuestionMapper;
 import com.tianji.learning.mapper.InteractionReplyMapper;
 import com.tianji.learning.service.IInteractionQuestionService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -275,5 +279,48 @@ public class InteractionQuestionServiceImpl extends ServiceImpl<InteractionQuest
         question.setId(id);
         question.setHidden(hidden);
         updateById(question);
+    }
+
+    @Override
+    @Transactional
+    public QuestionAdminVO queryQuestionByIdAdmin(Long id) {
+        InteractionQuestion question = getById(id);
+        if (question == null) {
+            return null;
+        }
+        QuestionAdminVO vo = BeanUtils.copyBean(question, QuestionAdminVO.class);
+        // 提问者信息
+        UserDTO user = userClient.queryUserById(question.getUserId());
+        if (user != null) {
+            vo.setUserName(user.getName());
+            vo.setUserIcon(user.getIcon());
+        }
+        // 课程信息
+        CourseFullInfoDTO course = courseClient.getCourseInfoById(question.getCourseId(), false, true);
+        if (course != null) {
+            // 课程名称
+            vo.setCourseName(course.getName());
+            // 分类信息
+            vo.setCategoryName(categoryCache.getCategoryNames(course.getCategoryIds()));
+            // 教师信息
+            List<Long> teacherIds = course.getTeacherIds();
+            List<UserDTO> teachers = userClient.queryUserByIds(teacherIds);
+            if (CollUtils.isNotEmpty(teachers)) {
+                vo.setTeacherName(teachers.stream().map(UserDTO::getName).collect(Collectors.joining("/")));
+            }
+        }
+        // 章节信息
+        List<CataSimpleInfoDTO> catas = catalogueClient.batchQueryCatalogue(List.of(question.getChapterId(), question.getSectionId()));
+        Map<Long, String> cataMap = new HashMap<>(catas.size());
+        if (CollUtils.isNotEmpty(catas)) {
+            cataMap = catas.stream().collect(Collectors.toMap(CataSimpleInfoDTO::getId, CataSimpleInfoDTO::getName));
+        }
+        vo.setChapterName(cataMap.getOrDefault(question.getChapterId(), ""));
+        vo.setSectionName(cataMap.getOrDefault(question.getSectionId(), ""));
+        // 更新问题表状态为已查看
+        update(new UpdateWrapper<InteractionQuestion>().lambda()
+                .eq(InteractionQuestion::getId, id)
+                .set(InteractionQuestion::getStatus, QuestionStatus.CHECKED));
+        return vo;
     }
 }

@@ -37,4 +37,10 @@ public class InteractionQuestionAdminController {
     public void hiddenQuestion(@PathVariable Long id, @PathVariable Boolean hidden) {
         questionService.hiddenQuestion(id, hidden);
     }
+
+    @GetMapping("/{id}")
+    @ApiOperation("管理端根据id查询问题详情")
+    public QuestionAdminVO queryQuestionByIdAdmin(Long id) {
+        return questionService.queryQuestionByIdAdmin(id);
+    }
 }
