@@ -43,4 +43,10 @@ public interface IInteractionQuestionService extends IService<InteractionQuestio
      * @return
      */
     QuestionVO queryQuestionById(Long id);
+
+    /**
+     * 删除我的问题
+     * @param id
+     */
+    void deleteQuestionById(Long id);
 }

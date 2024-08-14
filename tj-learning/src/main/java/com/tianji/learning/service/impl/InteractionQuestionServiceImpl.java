@@ -1,9 +1,11 @@
 package com.tianji.learning.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tianji.api.client.user.UserClient;
 import com.tianji.api.dto.user.UserDTO;
 import com.tianji.common.domain.dto.PageDTO;
+import com.tianji.common.exceptions.BadRequestException;
 import com.tianji.common.exceptions.DbException;
 import com.tianji.common.utils.BeanUtils;
 import com.tianji.common.utils.CollUtils;
@@ -154,5 +156,25 @@ public class InteractionQuestionServiceImpl extends ServiceImpl<InteractionQuest
             vo.setUserIcon(userDTO.getIcon());
         }
         return vo;
+    }
+
+    @Override
+    public void deleteQuestionById(Long id) {
+        // - 查询问题是否存在
+        InteractionQuestion question = getById(id);
+        if (question == null) {
+            return;
+        }
+        // - 判断是否是当前用户提问的
+        Long userId = UserContext.getUser();
+        if (!question.getUserId().equals(userId)) {
+            throw new BadRequestException("无权删除他人的问题");
+        }
+        // - 如果是则删除问题
+        removeById(id);
+        // - 然后删除问题下的回答及评论
+        replyMapper.delete(
+                new QueryWrapper<InteractionReply>().lambda().eq(InteractionReply::getQuestionId, id)
+        );
     }
 }
