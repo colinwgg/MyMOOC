@@ -318,9 +318,10 @@ public class InteractionQuestionServiceImpl extends ServiceImpl<InteractionQuest
         vo.setChapterName(cataMap.getOrDefault(question.getChapterId(), ""));
         vo.setSectionName(cataMap.getOrDefault(question.getSectionId(), ""));
         // 更新问题表状态为已查看
-        update(new UpdateWrapper<InteractionQuestion>().lambda()
+        lambdaUpdate()
+                .set(InteractionQuestion::getStatus, QuestionStatus.CHECKED.getValue())
                 .eq(InteractionQuestion::getId, id)
-                .set(InteractionQuestion::getStatus, QuestionStatus.CHECKED));
+                .update();
         return vo;
     }
 }
