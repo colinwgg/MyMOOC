@@ -134,4 +134,25 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
         }
         return PageDTO.of(page, voList);
     }
+
+    @Override
+    public void hiddenReply(Long id, Boolean hidden) {
+        InteractionReply old = getById(id);
+        if (old == null) {
+            return;
+        }
+        // 更新回答
+        InteractionReply reply = new InteractionReply();
+        reply.setHidden(hidden);
+        reply.setId(id);
+        updateById(reply);
+        // 判断是否为回答 如果是则更新下属评论hidden状态
+        if (old.getAnswerId() != null && old.getAnswerId() != 0) {
+            return;
+        }
+        lambdaUpdate()
+                .set(InteractionReply::getHidden, hidden)
+                .eq(InteractionReply::getAnswerId, id)
+                .update();
+    }
 }

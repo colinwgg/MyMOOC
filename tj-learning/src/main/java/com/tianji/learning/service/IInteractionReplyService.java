@@ -30,4 +30,11 @@ public interface IInteractionReplyService extends IService<InteractionReply> {
      * @return
      */
     PageDTO<ReplyVO> queryReplyPage(ReplyPageQuery query, boolean forAdmin);
+
+    /**
+     * 管理端显示或隐藏评论
+     * @param id
+     * @param hidden
+     */
+    void hiddenReply(Long id, Boolean hidden);
 }
