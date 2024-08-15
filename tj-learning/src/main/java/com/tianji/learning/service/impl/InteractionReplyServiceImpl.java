@@ -87,7 +87,7 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
         Set<Long> answerIds = new HashSet<>();
         Set<Long> targetReplyIds = new HashSet<>();
         for (InteractionReply r : records) {
-            if (!r.getAnonymity()) {
+            if (!r.getAnonymity() || forAdmin) {
                 userIds.add(r.getUserId());
             }
             answerIds.add(r.getAnswerId());
