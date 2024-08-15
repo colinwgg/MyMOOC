@@ -1,8 +1,11 @@
 package com.tianji.learning.service;
 
+import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.learning.domain.dto.ReplyDTO;
 import com.tianji.learning.domain.po.InteractionReply;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.tianji.learning.domain.query.ReplyPageQuery;
+import com.tianji.learning.domain.vo.ReplyVO;
 
 /**
  * <p>
@@ -19,4 +22,12 @@ public interface IInteractionReplyService extends IService<InteractionReply> {
      * @param replyDTO
      */
     void saveReply(ReplyDTO replyDTO);
+
+    /**
+     * 分页查询回答或评论列表
+     * @param query
+     * @param forAdmin
+     * @return
+     */
+    PageDTO<ReplyVO> queryReplyPage(ReplyPageQuery query, boolean forAdmin);
 }
