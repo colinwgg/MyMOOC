@@ -1,5 +1,6 @@
 package com.tianji.learning.service;
 
+import com.tianji.learning.domain.dto.ReplyDTO;
 import com.tianji.learning.domain.po.InteractionReply;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -13,4 +14,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IInteractionReplyService extends IService<InteractionReply> {
 
+    /**
+     * 新增回答或评论
+     * @param replyDTO
+     */
+    void saveReply(ReplyDTO replyDTO);
 }
