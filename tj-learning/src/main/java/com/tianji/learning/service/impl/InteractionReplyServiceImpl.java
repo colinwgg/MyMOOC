@@ -1,8 +1,11 @@
 package com.tianji.learning.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.tianji.api.client.remark.RemarkClient;
 import com.tianji.api.client.user.UserClient;
 import com.tianji.api.dto.user.UserDTO;
+import com.tianji.common.constants.Constant;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.common.exceptions.BadRequestException;
 import com.tianji.common.utils.BeanUtils;
@@ -19,6 +22,7 @@ import com.tianji.learning.service.IInteractionQuestionService;
 import com.tianji.learning.service.IInteractionReplyService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -39,6 +43,7 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
 
     private final IInteractionQuestionService questionService;
     private final UserClient userClient;
+    private final RemarkClient remarkClient;
 
     @Override
     public void saveReply(ReplyDTO replyDTO) {
@@ -77,7 +82,10 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
                 .eq(isQueryAnswer, InteractionReply::getQuestionId, questionId)
                 .eq(InteractionReply::getAnswerId, isQueryAnswer ? 0L : answerId)
                 .eq(!forAdmin, InteractionReply::getHidden, false)
-                .page(query.toMpPageDefaultSortByCreateTimeDesc());
+                .page(query.toMpPage(
+                        new OrderItem(Constant.DATA_FIELD_NAME_LIKED_TIME, false),
+                        new OrderItem(Constant.DATA_FIELD_NAME_CREATE_TIME, false)
+                ));
         List<InteractionReply> records = page.getRecords();
         if (CollUtils.isEmpty(records)) {
             return PageDTO.empty(page);
@@ -110,6 +118,8 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
             List<UserDTO> users = userClient.queryUserByIds(userIds);
             userMap = users.stream().collect(Collectors.toMap(UserDTO::getId, u -> u));
         }
+        // 查询用户点赞状态
+        Set<Long> bizLiked = remarkClient.isBizLiked(answerIds);
         // 处理VO
         List<ReplyVO> voList = new ArrayList<>(records.size());
         for (InteractionReply r : records) {
@@ -131,6 +141,7 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
                     vo.setTargetUserName(user.getName());
                 }
             }
+            vo.setLiked(bizLiked.contains(r.getId()));
         }
         return PageDTO.of(page, voList);
     }
