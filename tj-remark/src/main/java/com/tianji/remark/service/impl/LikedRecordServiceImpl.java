@@ -13,6 +13,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static com.tianji.common.constants.MqConstants.Exchange.LIKE_RECORD_EXCHANGE;
 import static com.tianji.common.constants.MqConstants.Key.LIKED_TIMES_KEY_TEMPLATE;
 
@@ -46,6 +50,16 @@ public class LikedRecordServiceImpl extends ServiceImpl<LikedRecordMapper, Liked
                 LIKE_RECORD_EXCHANGE,
                 StringUtils.format(LIKED_TIMES_KEY_TEMPLATE, recordDTO.getBizType()),
                 LikedTimesDTO.of(recordDTO.getBizId(), likedTimes));
+    }
+
+    @Override
+    public Set<Long> isBizLiked(List<Long> bizIds) {
+        Long userId = UserContext.getUser();
+        List<LikedRecord> list = lambdaQuery()
+                .in(LikedRecord::getBizId, bizIds)
+                .eq(LikedRecord::getUserId, userId)
+                .list();
+        return list.stream().map(LikedRecord::getBizId).collect(Collectors.toSet());
     }
 
     private boolean unlike(LikeRecordFormDTO recordDTO) {
