@@ -28,7 +28,7 @@ import static com.tianji.common.constants.MqConstants.Key.LIKED_TIMES_KEY_TEMPLA
  * @author colinwang
  * @since 2024-08-16
  */
-@Service
+// @Service
 @RequiredArgsConstructor
 public class LikedRecordServiceImpl extends ServiceImpl<LikedRecordMapper, LikedRecord> implements ILikedRecordService {
 
