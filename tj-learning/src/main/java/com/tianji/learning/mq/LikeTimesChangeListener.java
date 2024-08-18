@@ -1,7 +1,6 @@
 package com.tianji.learning.mq;
 
 import com.tianji.api.dto.remark.LikedTimesDTO;
-import com.tianji.common.constants.Constant;
 import com.tianji.common.constants.MqConstants;
 import com.tianji.learning.domain.po.InteractionReply;
 import com.tianji.learning.service.IInteractionReplyService;
@@ -13,6 +12,9 @@ import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -26,11 +28,15 @@ public class LikeTimesChangeListener {
             key = MqConstants.Key.QA_LIKED_TIMES_KEY
     )
     )
-    public void listenReplyLikedTimesChange(LikedTimesDTO dto) {
-        log.debug("监听到回答或评论{}的点赞数变更:{}", dto.getBizId(), dto.getLikedTimes());
-        InteractionReply reply = new InteractionReply();
-        reply.setId(dto.getBizId());
-        reply.setLikedTimes(dto.getLikedTimes());
-        replyService.updateById(reply);
+    public void listenReplyLikedTimesChange(List<LikedTimesDTO> likedTimesDTOS) {
+        log.debug("监听到回答或评论的点赞数变更");
+        List<InteractionReply> list = new ArrayList<>(likedTimesDTOS.size());
+        for (LikedTimesDTO dto : likedTimesDTOS) {
+            InteractionReply reply = new InteractionReply();
+            reply.setId(dto.getBizId());
+            reply.setLikedTimes(dto.getLikedTimes());
+            list.add(reply);
+        }
+        replyService.updateBatchById(list);
     }
 }
