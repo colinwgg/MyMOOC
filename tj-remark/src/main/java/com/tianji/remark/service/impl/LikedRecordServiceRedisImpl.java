@@ -95,7 +95,7 @@ public class LikedRecordServiceRedisImpl extends ServiceImpl<LikedRecordMapper, 
         // 发送mq消息
         mqHelper.send(
                 MqConstants.Exchange.LIKE_RECORD_EXCHANGE,
-                StringUtils.format(RedisConstants.LIKES_TIMES_KEY_PREFIX, bizType),
+                StringUtils.format(MqConstants.Key.LIKED_TIMES_KEY_TEMPLATE, bizType),
                 list);
     }
 
