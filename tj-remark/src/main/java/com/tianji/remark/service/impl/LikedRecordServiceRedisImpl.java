@@ -10,12 +10,16 @@ import com.tianji.remark.domain.po.LikedRecord;
 import com.tianji.remark.mapper.LikedRecordMapper;
 import com.tianji.remark.service.ILikedRecordService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.cache.CacheProperties;
+import org.springframework.data.redis.connection.StringRedisConnection;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -48,11 +52,20 @@ public class LikedRecordServiceRedisImpl extends ServiceImpl<LikedRecordMapper, 
     @Override
     public Set<Long> isBizLiked(List<Long> bizIds) {
         Long userId = UserContext.getUser();
-        List<LikedRecord> list = lambdaQuery()
-                .in(LikedRecord::getBizId, bizIds)
-                .eq(LikedRecord::getUserId, userId)
-                .list();
-        return list.stream().map(LikedRecord::getBizId).collect(Collectors.toSet());
+        // 查询点赞状态
+        List<Object> objects = redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+            StringRedisConnection src = (StringRedisConnection) connection;
+            for (Long bizId : bizIds) {
+                String key = RedisConstants.LIKE_BIZ_KEY_PREFIX + bizId;
+                src.sIsMember(key, userId.toString());
+            }
+            return null;
+        });
+        // 返回结果
+        return IntStream.range(0, objects.size())
+                .filter(i -> (boolean) objects.get(i))
+                .mapToObj(bizIds::get)
+                .collect(Collectors.toSet());
     }
 
     private boolean unlike(LikeRecordFormDTO recordDTO) {
