@@ -2,7 +2,11 @@ package com.tianji.remark.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.tianji.api.dto.remark.LikedTimesDTO;
 import com.tianji.common.autoconfigure.mq.RabbitMqHelper;
+import com.tianji.common.constants.MqConstants;
+import com.tianji.common.utils.CollUtils;
+import com.tianji.common.utils.StringUtils;
 import com.tianji.common.utils.UserContext;
 import com.tianji.remark.constants.RedisConstants;
 import com.tianji.remark.domain.dto.LikeRecordFormDTO;
@@ -14,8 +18,10 @@ import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -66,6 +72,31 @@ public class LikedRecordServiceRedisImpl extends ServiceImpl<LikedRecordMapper, 
                 .filter(i -> (boolean) objects.get(i))
                 .mapToObj(bizIds::get)
                 .collect(Collectors.toSet());
+    }
+
+    @Override
+    public void readLikedTimesAndSendMessage(String bizType, int maxBizSize) {
+        // 读取并移除redis中缓存的点赞总数
+        String key = RedisConstants.LIKES_TIMES_KEY_PREFIX + bizType;
+        Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet().popMin(key, maxBizSize);
+        if (CollUtils.isEmpty(tuples)) {
+            return;
+        }
+        // 数据转换
+        List<LikedTimesDTO> list = new ArrayList<>(tuples.size());
+        for (ZSetOperations.TypedTuple<String> tuple : tuples) {
+            Double likedTimes = tuple.getScore();
+            String bizId = tuple.getValue();
+            if (bizId == null || likedTimes == null) {
+                continue;
+            }
+            list.add(LikedTimesDTO.of(Long.valueOf(bizId), likedTimes.intValue()));
+        }
+        // 发送mq消息
+        mqHelper.send(
+                MqConstants.Exchange.LIKE_RECORD_EXCHANGE,
+                StringUtils.format(RedisConstants.LIKES_TIMES_KEY_PREFIX, bizType),
+                list);
     }
 
     private boolean unlike(LikeRecordFormDTO recordDTO) {
