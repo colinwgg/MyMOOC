@@ -1,5 +1,7 @@
 package com.tianji.learning.service.impl;
 
+import com.tianji.common.autoconfigure.mq.RabbitMqHelper;
+import com.tianji.common.constants.MqConstants;
 import com.tianji.common.exceptions.BizIllegalException;
 import com.tianji.common.utils.BooleanUtils;
 import com.tianji.common.utils.CollUtils;
@@ -7,6 +9,7 @@ import com.tianji.common.utils.DateUtils;
 import com.tianji.common.utils.UserContext;
 import com.tianji.learning.constants.RedisConstants;
 import com.tianji.learning.domain.vo.SignResultVO;
+import com.tianji.learning.mq.message.SignInMessage;
 import com.tianji.learning.service.ISignRecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.connection.BitFieldSubCommands;
@@ -21,6 +24,7 @@ import java.util.List;
 public class SignRecordServiceImpl implements ISignRecordService {
 
     private final StringRedisTemplate redisTemplate;
+    private final RabbitMqHelper mqHelper;
 
     @Override
     public SignResultVO addSignRecords() {
@@ -50,8 +54,11 @@ public class SignRecordServiceImpl implements ISignRecordService {
                 rewardPoints = 40;
                 break;
         }
-        // TODO 保存积分明细记录
-
+        // 保存积分明细记录
+        mqHelper.send(
+                MqConstants.Exchange.LEARNING_EXCHANGE,
+                MqConstants.Key.SIGN_IN,
+                SignInMessage.of(userId, rewardPoints + 1));
         // 封装vo并返回
         SignResultVO vo = new SignResultVO();
         vo.setSignDays(signDays);
