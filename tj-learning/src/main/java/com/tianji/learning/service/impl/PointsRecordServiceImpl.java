@@ -1,6 +1,7 @@
 package com.tianji.learning.service.impl;
 
 import com.tianji.learning.domain.po.PointsRecord;
+import com.tianji.learning.enums.PointsRecordType;
 import com.tianji.learning.mapper.PointsRecordMapper;
 import com.tianji.learning.service.IPointsRecordService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -17,4 +18,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class PointsRecordServiceImpl extends ServiceImpl<PointsRecordMapper, PointsRecord> implements IPointsRecordService {
 
+    @Override
+    public void addPointsRecord(Long userId, Integer points, PointsRecordType pointsRecordType) {
+        // TODO 保存积分明细
+
+    }
 }
