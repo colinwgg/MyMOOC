@@ -1,8 +1,11 @@
 package com.tianji.learning.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.tianji.common.utils.CollUtils;
 import com.tianji.common.utils.DateUtils;
+import com.tianji.common.utils.UserContext;
 import com.tianji.learning.domain.po.PointsRecord;
+import com.tianji.learning.domain.vo.PointsStatisticsVO;
 import com.tianji.learning.enums.PointsRecordType;
 import com.tianji.learning.mapper.PointsRecordMapper;
 import com.tianji.learning.service.IPointsRecordService;
@@ -10,6 +13,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>
@@ -43,8 +48,35 @@ public class PointsRecordServiceImpl extends ServiceImpl<PointsRecordMapper, Poi
         PointsRecord p = new PointsRecord();
         p.setUserId(userId);
         p.setPoints(realPoints);
-        p.setType(type.getValue());
+        p.setType(type);
         save(p);
+    }
+
+    @Override
+    public List<PointsStatisticsVO> queryMyPointsToday() {
+        Long userId = UserContext.getUser();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime begin = DateUtils.getDayStartTime(now);
+        LocalDateTime end = DateUtils.getDayEndTime(now);
+        // 构建查询条件
+        QueryWrapper<PointsRecord> wrapper = new QueryWrapper<>();
+        wrapper.lambda()
+                .eq(PointsRecord::getUserId, userId)
+                .between(PointsRecord::getCreateTime, begin, end);
+        List<PointsRecord> list = getBaseMapper().queryUserPointsByDate(wrapper);
+        if (CollUtils.isEmpty(list)) {
+            return CollUtils.emptyList();
+        }
+        // 封装vo
+        List<PointsStatisticsVO> voList = new ArrayList<>(list.size());
+        for (PointsRecord p : list) {
+            PointsStatisticsVO vo = new PointsStatisticsVO();
+            vo.setType(p.getType().getDesc());
+            vo.setPoints(p.getPoints());
+            vo.setMaxPoints(p.getType().getMaxPoints());
+            voList.add(vo);
+        }
+        return voList;
     }
 
     private int queryUserPointsByTypeAndDate(Long userId, PointsRecordType type, LocalDateTime begin, LocalDateTime end) {
