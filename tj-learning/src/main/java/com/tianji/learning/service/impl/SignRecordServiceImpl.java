@@ -66,6 +66,32 @@ public class SignRecordServiceImpl implements ISignRecordService {
         return vo;
     }
 
+    @Override
+    public Byte[] querySignRecords() {
+        Long userId = UserContext.getUser();
+        LocalDate now = LocalDate.now();
+        int dayOfMonth = now.getDayOfMonth();
+        // -拼接key
+        String key = RedisConstants.SIGN_RECORD_KEY_PREFIX
+                + userId
+                + now.format(DateUtils.SIGN_DATE_SUFFIX_FORMATTER);
+        List<Long> result = redisTemplate.opsForValue()
+                .bitField(key, BitFieldSubCommands.create().get(
+                        BitFieldSubCommands.BitFieldType.unsigned(dayOfMonth)).valueAt(0));
+        if (CollUtils.isEmpty(result)) {
+            return new Byte[0];
+        }
+        int num = result.get(0).intValue();
+        Byte[] bytes = new Byte[dayOfMonth];
+        int pos = dayOfMonth - 1;
+        while (pos >= 0) {
+            bytes[pos] = (byte) (num & 1);
+            num = num >> 1;
+            pos--;
+        }
+        return bytes;
+    }
+
     private int countSignDays(String key, int len) {
         // 获取本月所有签到记录
         List<Long> result = redisTemplate.opsForValue()
