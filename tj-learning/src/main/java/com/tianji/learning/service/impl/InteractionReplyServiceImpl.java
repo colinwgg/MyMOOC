@@ -70,11 +70,13 @@ public class InteractionReplyServiceImpl extends ServiceImpl<InteractionReplyMap
                 .set(replyDTO.getIsStudent(), InteractionQuestion::getStatus, QuestionStatus.UN_CHECK.getValue())
                 .eq(InteractionQuestion::getId, replyDTO.getQuestionId())
                 .update();
-        mqHelper.send(
-                MqConstants.Exchange.LEARNING_EXCHANGE,
-                MqConstants.Key.WRITE_REPLY,
-                userId
-        );
+        if (replyDTO.getIsStudent()) {
+            mqHelper.send(
+                    MqConstants.Exchange.LEARNING_EXCHANGE,
+                    MqConstants.Key.WRITE_REPLY,
+                    userId
+            );
+        }
     }
 
     @Override

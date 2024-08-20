@@ -38,4 +38,14 @@ public class LearningPointsListener {
     public void listenSignInMessage(SignInMessage message) {
         recordService.addPointsRecord(message.getUserId(), message.getPoints(), PointsRecordType.SIGN);
     }
+
+    // 监听学习事件
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = "learning.points.queue", durable = "true"),
+            exchange = @Exchange(name = MqConstants.Exchange.LEARNING_EXCHANGE, type = ExchangeTypes.TOPIC),
+            key = MqConstants.Key.LEARN_SECTION
+    ))
+    public void listenLearnSectionMessage(Long userId) {
+        recordService.addPointsRecord(userId, 10, PointsRecordType.LEARNING);
+    }
 }

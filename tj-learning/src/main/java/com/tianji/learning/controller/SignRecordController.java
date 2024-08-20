@@ -19,7 +19,7 @@ public class SignRecordController {
     private final ISignRecordService recordService;
 
     @PostMapping
-    @ApiOperation("签到功能接口")
+    @ApiOperation("提交签到")
     public SignResultVO addSignRecords() {
         return recordService.addSignRecords();
     }
