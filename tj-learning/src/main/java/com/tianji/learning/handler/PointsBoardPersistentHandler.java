@@ -7,6 +7,7 @@ import com.tianji.learning.domain.po.PointsBoard;
 import com.tianji.learning.service.IPointsBoardSeasonService;
 import com.tianji.learning.service.IPointsBoardService;
 import com.tianji.learning.task.TableInfoContext;
+import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -45,8 +46,10 @@ public class PointsBoardPersistentHandler {
         TableInfoContext.setInfo(POINTS_BOARD_TABLE_PREFIX + season);
         // 查询榜单数据
         String key = RedisConstants.POINTS_BOARD_KEY_PREFIX + time.format(DateUtils.POINTS_BOARD_SUFFIX_FORMATTER);
-        int pageNo = 1;
-        int pageSize = 1000;
+        int index = XxlJobHelper.getShardIndex();
+        int total = XxlJobHelper.getShardTotal();
+        int pageNo = index + 1; // 起始页，就是分片序号+1
+        int pageSize = 10;
         while (true) {
             List<PointsBoard> boardList = pointsBoardService.queryCurrentBoardList(key, pageNo, pageSize);
             if (CollUtils.isEmpty(boardList)) {
@@ -58,7 +61,7 @@ public class PointsBoardPersistentHandler {
                 b.setRank(null);
             });
             pointsBoardService.saveBatch(boardList);
-            pageNo++;
+            pageNo += total;
         }
         TableInfoContext.remove();
     }
