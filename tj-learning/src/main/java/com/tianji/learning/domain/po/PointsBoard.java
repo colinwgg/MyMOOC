@@ -1,12 +1,14 @@
 package com.tianji.learning.domain.po;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.io.Serializable;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+
+import java.io.Serializable;
 
 /**
  * <p>
@@ -27,7 +29,7 @@ public class PointsBoard implements Serializable {
     /**
      * 榜单id
      */
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id", type = IdType.INPUT)
     private Long id;
 
     /**
@@ -43,11 +45,13 @@ public class PointsBoard implements Serializable {
     /**
      * 名次，只记录赛季前100
      */
+    @TableField(exist = false)
     private Integer rank;
 
     /**
      * 赛季，例如 1,就是第一赛季，2-就是第二赛季
      */
+    @TableField(exist = false)
     private Integer season;
 
 

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.tianji.learning.domain.query.PointsBoardQuery;
 import com.tianji.learning.domain.vo.PointsBoardSeasonVO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -18,4 +19,6 @@ import java.util.List;
 public interface IPointsBoardSeasonService extends IService<PointsBoardSeason> {
 
     List<PointsBoardSeasonVO> queryPointsBoardSeasons(PointsBoardQuery query);
+
+    Integer querySeasonByTime(LocalDateTime time);
 }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * <p>
@@ -34,5 +35,14 @@ public class PointsBoardSeasonServiceImpl extends ServiceImpl<PointsBoardSeasonM
             return CollUtils.emptyList();
         }
         return BeanUtils.copyToList(list, PointsBoardSeasonVO.class);
+    }
+
+    @Override
+    public Integer querySeasonByTime(LocalDateTime time) {
+        Optional<PointsBoardSeason> optional = lambdaQuery()
+                .le(PointsBoardSeason::getBeginTime, time)
+                .ge(PointsBoardSeason::getEndTime, time)
+                .oneOpt();
+        return optional.map(PointsBoardSeason::getId).orElse(null);
     }
 }

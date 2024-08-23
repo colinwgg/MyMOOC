@@ -23,6 +23,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.tianji.learning.constants.LearningConstants.POINTS_BOARD_TABLE_PREFIX;
+
 /**
  * <p>
  * 学霸天梯榜 服务实现类
@@ -81,6 +83,11 @@ public class PointsBoardServiceImpl extends ServiceImpl<PointsBoardMapper, Point
         }
         vo.setBoardList(items);
         return vo;
+    }
+
+    @Override
+    public void createPointsBoardTableBySeason(Integer season) {
+        getBaseMapper().createPointsBoardTable(POINTS_BOARD_TABLE_PREFIX + season);
     }
 
     private PointsBoard queryMyCurrentBoard(String key) {
