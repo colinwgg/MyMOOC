@@ -10,6 +10,7 @@ import com.tianji.learning.task.TableInfoContext;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ import static com.tianji.learning.constants.LearningConstants.POINTS_BOARD_TABLE
 public class PointsBoardPersistentHandler {
     private final IPointsBoardSeasonService seasonService;
     private final IPointsBoardService pointsBoardService;
+    private final StringRedisTemplate redisTemplate;
 
     // @Scheduled(cron = "0 0 3 1 * ?") // 每月1号，凌晨3点执行
     @XxlJob("createTableJob")
@@ -64,5 +66,14 @@ public class PointsBoardPersistentHandler {
             pageNo += total;
         }
         TableInfoContext.remove();
+    }
+
+    @XxlJob("clearPointsBoardFromRedis")
+    public void clearPointsBoardFromRedis() {
+        // 获取上月时间
+        LocalDateTime time = LocalDateTime.now().minusMonths(1);
+        // 拼接key
+        String key = RedisConstants.POINTS_BOARD_KEY_PREFIX + time.format(DateUtils.POINTS_BOARD_SUFFIX_FORMATTER);
+        redisTemplate.unlink(key);
     }
 }
