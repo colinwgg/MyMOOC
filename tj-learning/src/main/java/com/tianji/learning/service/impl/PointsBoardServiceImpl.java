@@ -105,7 +105,8 @@ public class PointsBoardServiceImpl extends ServiceImpl<PointsBoardMapper, Point
         return null;
     }
 
-    private List<PointsBoard> queryCurrentBoardList(String key, Integer pageNo, Integer pageSize) {
+    @Override
+    public List<PointsBoard> queryCurrentBoardList(String key, Integer pageNo, Integer pageSize) {
         // 计算分页
         int from = (pageNo - 1) * pageSize;
         // 查询
