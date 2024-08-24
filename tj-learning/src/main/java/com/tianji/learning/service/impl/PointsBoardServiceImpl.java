@@ -1,5 +1,6 @@
 package com.tianji.learning.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.tianji.api.client.user.UserClient;
 import com.tianji.api.dto.user.UserDTO;
@@ -13,6 +14,7 @@ import com.tianji.learning.domain.vo.PointsBoardItemVO;
 import com.tianji.learning.domain.vo.PointsBoardVO;
 import com.tianji.learning.mapper.PointsBoardMapper;
 import com.tianji.learning.service.IPointsBoardService;
+import com.tianji.learning.task.TableInfoContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.BoundZSetOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -102,7 +104,17 @@ public class PointsBoardServiceImpl extends ServiceImpl<PointsBoardMapper, Point
     }
 
     private PointsBoard queryMyHistoryBoard(Long season) {
-        return null;
+        Long userId = UserContext.getUser();
+        TableInfoContext.setInfo(POINTS_BOARD_TABLE_PREFIX + season);
+        Optional<PointsBoard> opt = lambdaQuery()
+                .eq(PointsBoard::getUserId, userId)
+                .oneOpt();
+        if (opt.isEmpty()) {
+            return null;
+        }
+        PointsBoard board = opt.get();
+        board.setRank(board.getId().intValue());
+        return board;
     }
 
     @Override
@@ -134,6 +146,13 @@ public class PointsBoardServiceImpl extends ServiceImpl<PointsBoardMapper, Point
     }
 
     private List<PointsBoard> queryHistoryBoardList(PointsBoardQuery query) {
-        return null;
+        TableInfoContext.setInfo(POINTS_BOARD_TABLE_PREFIX + query.getSeason());
+        Page<PointsBoard> page = page(query.toMpPage());
+        List<PointsBoard> records = page.getRecords();
+        if (CollUtils.isEmpty(records)) {
+            return CollUtils.emptyList();
+        }
+        records.forEach(record -> record.setRank(record.getId().intValue()));
+        return records;
     }
 }
