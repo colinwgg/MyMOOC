@@ -3,6 +3,7 @@ package com.tianji.promotion.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.tianji.api.cache.CategoryCache;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.common.exceptions.BadRequestException;
 import com.tianji.common.exceptions.BizIllegalException;
@@ -14,7 +15,9 @@ import com.tianji.promotion.domain.dto.CouponIssueFormDTO;
 import com.tianji.promotion.domain.po.Coupon;
 import com.tianji.promotion.domain.po.CouponScope;
 import com.tianji.promotion.domain.query.CouponQuery;
+import com.tianji.promotion.domain.vo.CouponDetailVO;
 import com.tianji.promotion.domain.vo.CouponPageVO;
+import com.tianji.promotion.domain.vo.CouponScopeVO;
 import com.tianji.promotion.enums.CouponStatus;
 import com.tianji.promotion.enums.ObtainType;
 import com.tianji.promotion.mapper.CouponMapper;
@@ -44,6 +47,7 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
 
     private final ICouponScopeService scopeService;
     private final IExchangeCodeService codeSerive;
+    private final CategoryCache categoryCache;
 
     @Override
     public void saveCoupon(CouponFormDTO dto) {
@@ -128,5 +132,25 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
             return;
         }
         scopeService.remove(new LambdaQueryWrapper<CouponScope>().eq(CouponScope::getCouponId, id));
+    }
+
+    @Override
+    public CouponDetailVO queryCouponById(Long id) {
+        Coupon coupon = getById(id);
+        CouponDetailVO vo = BeanUtils.copyBean(coupon, CouponDetailVO.class);
+        if (vo == null || !coupon.getSpecific()) {
+            return vo;
+        }
+        List<CouponScope> scopes = scopeService.lambdaQuery()
+                .eq(CouponScope::getCouponId, id).list();
+        if (CollUtils.isEmpty(scopes)) {
+            return vo;
+        }
+        List<CouponScopeVO> scopeVOS = scopes.stream()
+                .map(CouponScope::getBizId)
+                .map(cateId -> new CouponScopeVO(cateId, categoryCache.getNameByLv3Id(cateId)))
+                .collect(Collectors.toList());
+        vo.setScopes(scopeVOS);
+        return vo;
     }
 }
