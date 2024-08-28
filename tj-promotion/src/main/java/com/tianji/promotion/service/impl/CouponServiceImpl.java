@@ -1,5 +1,6 @@
 package com.tianji.promotion.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.tianji.common.domain.dto.PageDTO;
@@ -26,6 +27,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.tianji.promotion.enums.CouponStatus.DRAFT;
 
 /**
  * <p>
@@ -86,7 +89,7 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
             throw new BadRequestException("优惠券不存在！");
         }
         // 状态必须为待发放or暂停
-        if (coupon.getStatus() != CouponStatus.DRAFT && coupon.getStatus() != CouponStatus.PAUSE) {
+        if (coupon.getStatus() != DRAFT && coupon.getStatus() != CouponStatus.PAUSE) {
             throw new BizIllegalException("优惠券状态错误！");
         }
         // 是否立刻发放
@@ -103,9 +106,27 @@ public class CouponServiceImpl extends ServiceImpl<CouponMapper, Coupon> impleme
         }
         updateById(c);
         // 判断是否需要生成兑换码，优惠券类型必须是兑换码，优惠券状态必须是待发放
-        if (coupon.getObtainWay() == ObtainType.ISSUE && coupon.getStatus() == CouponStatus.DRAFT) {
+        if (coupon.getObtainWay() == ObtainType.ISSUE && coupon.getStatus() == DRAFT) {
             coupon.setIssueEndTime(c.getIssueEndTime());
             codeSerive.asyncGenerateCode(coupon);
         }
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        Coupon coupon = getById(id);
+        if (coupon == null || coupon.getStatus() != DRAFT) {
+            throw new BadRequestException("优惠券不存在或者优惠券正在使用中");
+        }
+        boolean success = remove(new LambdaQueryWrapper<Coupon>()
+                .eq(Coupon::getId, id)
+                .eq(Coupon::getStatus, DRAFT));
+        if (!success) {
+            throw new BadRequestException("优惠券不存在或者优惠券正在使用中");
+        }
+        if (!coupon.getSpecific()) {
+            return;
+        }
+        scopeService.remove(new LambdaQueryWrapper<CouponScope>().eq(CouponScope::getCouponId, id));
     }
 }
