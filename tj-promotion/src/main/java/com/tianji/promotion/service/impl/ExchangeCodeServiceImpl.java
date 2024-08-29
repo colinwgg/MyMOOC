@@ -1,8 +1,12 @@
 package com.tianji.promotion.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.promotion.domain.po.Coupon;
 import com.tianji.promotion.domain.po.ExchangeCode;
+import com.tianji.promotion.domain.query.CodeQuery;
+import com.tianji.promotion.domain.vo.ExchangeCodeVO;
 import com.tianji.promotion.mapper.ExchangeCodeMapper;
 import com.tianji.promotion.service.IExchangeCodeService;
 import com.tianji.promotion.utils.CodeUtil;
@@ -58,5 +62,14 @@ public class ExchangeCodeServiceImpl extends ServiceImpl<ExchangeCodeMapper, Exc
         saveBatch(list);
 
         redisTemplate.opsForZSet().add(COUPON_RANGE_KEY, coupon.getId().toString(), maxSerialNum);
+    }
+
+    @Override
+    public PageDTO<ExchangeCodeVO> queryCodePage(CodeQuery query) {
+        Page<ExchangeCode> page = lambdaQuery()
+                .eq(ExchangeCode::getExchangeTargetId, query.getCouponId())
+                .eq(ExchangeCode::getStatus, query.getStatus())
+                .page(query.toMpPage());
+        return PageDTO.of(page, c -> new ExchangeCodeVO(c.getId(), c.getCode()));
     }
 }
