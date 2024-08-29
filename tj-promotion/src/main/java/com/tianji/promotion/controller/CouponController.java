@@ -61,4 +61,10 @@ public class CouponController {
     public CouponDetailVO queryCouponById(@ApiParam("优惠券id") @PathVariable("id") Long id){
         return couponService.queryCouponById(id);
     }
+
+    @ApiOperation("暂停发放优惠券接口")
+    @PutMapping("/{id}/pause")
+    public void pauseIssue(@ApiParam("优惠券id") @PathVariable("id") Long id) {
+        couponService.pauseIssue(id);
+    }
 }
