@@ -18,8 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.tianji.promotion.constants.PromotionConstants.COUPON_CODE_SERIAL_KEY;
-import static com.tianji.promotion.constants.PromotionConstants.COUPON_RANGE_KEY;
+import static com.tianji.promotion.constants.PromotionConstants.*;
 
 /**
  * <p>
@@ -71,5 +70,11 @@ public class ExchangeCodeServiceImpl extends ServiceImpl<ExchangeCodeMapper, Exc
                 .eq(ExchangeCode::getStatus, query.getStatus())
                 .page(query.toMpPage());
         return PageDTO.of(page, c -> new ExchangeCodeVO(c.getId(), c.getCode()));
+    }
+
+    @Override
+    public boolean updateExchangeMark(long serialNum, boolean mark) {
+        Boolean boo = redisTemplate.opsForValue().setBit(COUPON_CODE_MAP_KEY, serialNum, mark);
+        return boo != null && boo;
     }
 }
