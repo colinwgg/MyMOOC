@@ -20,14 +20,17 @@ import com.tianji.promotion.mapper.UserCouponMapper;
 import com.tianji.promotion.service.IExchangeCodeService;
 import com.tianji.promotion.service.IUserCouponService;
 import com.tianji.promotion.utils.CodeUtil;
+import com.tianji.promotion.utils.RedisLock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -44,6 +47,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
 
     private final CouponMapper couponMapper;
     private final IExchangeCodeService codeService;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     @Transactional
@@ -60,12 +64,23 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         if (coupon.getIssueNum() >= coupon.getTotalNum()) {
             throw new BadRequestException("优惠券库存不足");
         }
-        // 校验优惠券的每人限领数量
-        Long userId = UserContext.getUser();
         // 校验并生成用户券
-        synchronized (userId.toString().intern()) {
+        Long userId = UserContext.getUser();
+        String key = "lock:coupon:uid" + userId;
+        // 创建锁对象
+        RedisLock lock = new RedisLock(key, redisTemplate);
+        // 尝试获取锁
+        boolean isLock = lock.tryLock(5, TimeUnit.SECONDS);
+        if (!isLock) {
+            throw new BizIllegalException("请求太频繁");
+        }
+        try {
+            // 获取锁成功 执行业务
             IUserCouponService userCouponService = (IUserCouponService) AopContext.currentProxy();
             userCouponService.checkAndCreateUserCoupon(coupon, userId, null);
+        } finally {
+            // 释放锁
+            lock.unlock();
         }
     }
 
@@ -138,6 +153,9 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
             }
             // 校验并生成用户券
             Coupon coupon = couponMapper.selectById(couponId);
+            if (now.isAfter(coupon.getIssueEndTime()) || now.isBefore(coupon.getIssueBeginTime())) {
+                throw new BizIllegalException("优惠券活动未开始或已经结束");
+            }
             Long userId = UserContext.getUser();
             checkAndCreateUserCoupon(coupon, userId, serialNum);
         } catch (Exception e) {
