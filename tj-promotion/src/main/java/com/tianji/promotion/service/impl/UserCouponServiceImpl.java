@@ -67,7 +67,10 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
             throw new BadRequestException("超出领取数量");
         }
         // 更新优惠券的已经发放的数量 + 1
-        couponMapper.incrIssueNum(coupon.getId());
+        int r = couponMapper.incrIssueNum(coupon.getId());
+        if (r == 0) {
+            throw new BizIllegalException("优惠券库存不足");
+        }
         // 新增一个用户券
         saveUserCoupon(coupon, userId);
         // 更新兑换码状态
