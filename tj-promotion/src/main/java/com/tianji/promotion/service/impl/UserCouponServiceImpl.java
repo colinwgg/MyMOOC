@@ -14,6 +14,7 @@ import com.tianji.promotion.service.IExchangeCodeService;
 import com.tianji.promotion.service.IUserCouponService;
 import com.tianji.promotion.utils.CodeUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,7 +54,8 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         Long userId = UserContext.getUser();
         // 校验并生成用户券
         synchronized (userId.toString().intern()) {
-            checkAndCreateUserCoupon(coupon, userId, null);
+            IUserCouponService userCouponService = (IUserCouponService) AopContext.currentProxy();
+            userCouponService.checkAndCreateUserCoupon(coupon, userId, null);
         }
     }
 
