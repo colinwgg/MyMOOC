@@ -1,8 +1,11 @@
 package com.tianji.promotion.service;
 
+import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.promotion.domain.po.Coupon;
 import com.tianji.promotion.domain.po.UserCoupon;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.tianji.promotion.domain.query.UserCouponQuery;
+import com.tianji.promotion.domain.vo.CouponVO;
 
 /**
  * <p>
@@ -19,4 +22,6 @@ public interface IUserCouponService extends IService<UserCoupon> {
     void exchangeCoupon(String code);
 
     void checkAndCreateUserCoupon(Coupon coupon, Long userId, Long serialNum);
+
+    PageDTO<CouponVO> queryMyCouponPage(UserCouponQuery query);
 }
