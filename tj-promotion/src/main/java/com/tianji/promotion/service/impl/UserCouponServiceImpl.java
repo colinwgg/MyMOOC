@@ -52,10 +52,13 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         // 校验优惠券的每人限领数量
         Long userId = UserContext.getUser();
         // 校验并生成用户券
-        checkAndCreateUserCoupon(coupon, userId, null);
+        synchronized (userId.toString().intern()) {
+            checkAndCreateUserCoupon(coupon, userId, null);
+        }
     }
 
-    private void checkAndCreateUserCoupon(Coupon coupon, Long userId, Long serialNum){
+    @Transactional
+    public void checkAndCreateUserCoupon(Coupon coupon, Long userId, Long serialNum) {
         // 校验每人限领数量
         // 统计当前用户对当前优惠券的已经领取的数量
         Integer count = lambdaQuery()
