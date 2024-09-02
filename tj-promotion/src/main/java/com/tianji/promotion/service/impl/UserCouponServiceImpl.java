@@ -3,6 +3,7 @@ package com.tianji.promotion.service.impl;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.tianji.common.autoconfigure.redisson.annotations.Lock;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.common.exceptions.BadRequestException;
 import com.tianji.common.exceptions.BizIllegalException;
@@ -20,9 +21,7 @@ import com.tianji.promotion.mapper.UserCouponMapper;
 import com.tianji.promotion.service.IExchangeCodeService;
 import com.tianji.promotion.service.IUserCouponService;
 import com.tianji.promotion.utils.CodeUtil;
-import com.tianji.promotion.utils.MyLock;
 import lombok.RequiredArgsConstructor;
-import org.redisson.api.RedissonClient;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -48,7 +47,6 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
     private final CouponMapper couponMapper;
     private final IExchangeCodeService codeService;
     private final StringRedisTemplate redisTemplate;
-    private final RedissonClient redissonClient;
 
     @Override
     @Transactional
@@ -72,7 +70,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
     }
 
     @Transactional
-    @MyLock(name = "lock:coupon")
+    @Lock(name = "lock:coupon:#{userId}")
     @Override
     public void checkAndCreateUserCoupon(Coupon coupon, Long userId, Long serialNum) {
         // 校验每人限领数量
@@ -120,6 +118,7 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
     }
 
     @Override
+    @Lock(name = "lock:coupon:#{T(com.tianji.common.utils.UserContext).getUser()}")
     @Transactional
     public void exchangeCoupon(String code) {
         // 解析兑换码
