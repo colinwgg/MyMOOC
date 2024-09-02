@@ -16,4 +16,6 @@ public @interface MyLock {
     long leaseTime() default -1;
 
     TimeUnit unit() default TimeUnit.SECONDS;
+
+    MyLockType lockType() default MyLockType.RE_ENTRANT_LOCK;
 }
