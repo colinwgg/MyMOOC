@@ -1,6 +1,5 @@
 package com.tianji.promotion.utils;
 
-import com.tianji.common.exceptions.BizIllegalException;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -21,11 +20,11 @@ public class MyLockAspect implements Ordered {
         // 1.创建锁对象
         RLock lock = lockFactory.getLock(myLock.lockType(), myLock.name());
         // 2.尝试获取锁
-        boolean isLock = lock.tryLock(myLock.waitTime(), myLock.leaseTime(), myLock.unit());
+        boolean isLock = myLock.lockStrategy().tryLock(lock, myLock);
         // 3.判断是否成功
         if(!isLock) {
             // 3.1.失败，快速结束
-            throw new BizIllegalException("请求太频繁");
+            return null;
         }
         try {
             // 3.2.成功，执行业务
