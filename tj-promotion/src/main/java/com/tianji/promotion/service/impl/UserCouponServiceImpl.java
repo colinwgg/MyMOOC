@@ -141,23 +141,33 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         }
         try {
             // 查询兑换码对应的优惠券id
-            ExchangeCode exchangeCode = codeService.getById(serialNum);
-            if (exchangeCode == null) {
+            Long couponId = codeService.exchangeTargetId(serialNum);
+            if (couponId == null) {
                 throw new BizIllegalException("兑换码不存在！");
             }
-            Long couponId = exchangeCode.getExchangeTargetId();
+            Coupon coupon = queryCouponByCache(couponId);
             // 是否过期
             LocalDateTime now = LocalDateTime.now();
-            if (now.isAfter(exchangeCode.getExpiredTime())) {
-                throw new BizIllegalException("兑换码已经过期");
-            }
-            // 校验并生成用户券
-            Coupon coupon = couponMapper.selectById(couponId);
             if (now.isAfter(coupon.getIssueEndTime()) || now.isBefore(coupon.getIssueBeginTime())) {
                 throw new BizIllegalException("优惠券活动未开始或已经结束");
             }
+            // 校验每人限领数量
             Long userId = UserContext.getUser();
-            checkAndCreateUserCoupon(coupon, userId, serialNum);
+            String key = PromotionConstants.USER_COUPON_CACHE_KEY_PREFIX + couponId;
+            Long count = redisTemplate.opsForHash().increment(key, userId.toString(), 1);
+            if (count > coupon.getUserLimit()) {
+                throw new BadRequestException("超出领取数量");
+            }
+            // 发送MQ消息
+            UserCouponDTO uc = new UserCouponDTO();
+            uc.setCouponId(couponId);
+            uc.setUserId(userId);
+            uc.setSerialNum((int) serialNum);
+            mqHelper.send(
+                    MqConstants.Exchange.PROMOTION_EXCHANGE,
+                    MqConstants.Key.COUPON_RECEIVE,
+                    uc
+            );
         } catch (Exception e) {
             codeService.updateExchangeMark(serialNum, false);
             throw e;
