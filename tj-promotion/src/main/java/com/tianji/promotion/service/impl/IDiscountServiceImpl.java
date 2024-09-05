@@ -13,12 +13,10 @@ import com.tianji.promotion.service.ICouponScopeService;
 import com.tianji.promotion.service.IDiscountService;
 import com.tianji.promotion.strategy.discount.Discount;
 import com.tianji.promotion.strategy.discount.DiscountStrategy;
+import com.tianji.promotion.utils.PermuteUtil;
 import lombok.RequiredArgsConstructor;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -46,6 +44,16 @@ public class IDiscountServiceImpl implements IDiscountService {
         }
         // 细筛
         Map<Coupon, List<OrderCourseDTO>> availableCouponMap = findAvailableCoupon(availableCoupons, orderCourses);
+        if (CollUtils.isEmpty(availableCouponMap)) {
+            return CollUtils.emptyList();
+        }
+        // 优惠方案全排列组合
+        availableCoupons = new ArrayList<>(availableCouponMap.keySet());
+        List<List<Coupon>> solutions = PermuteUtil.permute(availableCoupons);
+        // 添加单券方案
+        for (Coupon c : availableCoupons) {
+            solutions.add(List.of(c));
+        }
     }
 
     private Map<Coupon, List<OrderCourseDTO>> findAvailableCoupon(List<Coupon> coupons, List<OrderCourseDTO> courses) {
