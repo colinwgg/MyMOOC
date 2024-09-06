@@ -54,6 +54,11 @@ public class IDiscountServiceImpl implements IDiscountService {
         for (Coupon c : availableCoupons) {
             solutions.add(List.of(c));
         }
+        // 计算方案的优惠明细
+        List<CouponDiscountDTO> list = Collections.synchronizedList(new ArrayList<>(solutions.size()));
+        for (List<Coupon> solution : solutions) {
+            list.add(calculateSolutionDiscount(availableCouponMap, orderCourses, solution));
+        }
     }
 
     private Map<Coupon, List<OrderCourseDTO>> findAvailableCoupon(List<Coupon> coupons, List<OrderCourseDTO> courses) {
@@ -80,5 +85,50 @@ public class IDiscountServiceImpl implements IDiscountService {
             }
         }
         return map;
+    }
+
+    private CouponDiscountDTO calculateSolutionDiscount(
+            Map<Coupon, List<OrderCourseDTO>> couponMap, List<OrderCourseDTO> courses, List<Coupon> solution) {
+        CouponDiscountDTO dto = new CouponDiscountDTO();
+        // 初始化折扣明细的映射
+        Map<Long, Integer> detailMap = courses.stream().collect(Collectors.toMap(OrderCourseDTO::getId, oc -> 0));
+        for (Coupon coupon : solution) {
+            // 获取优惠券限定范围对应的课程
+            List<OrderCourseDTO> availableCourses = couponMap.get(coupon);
+            // 计算课程总价(课程原价 - 折扣明细)
+            int totalAmount = availableCourses.stream().mapToInt(oc -> oc.getPrice() - detailMap.get(oc.getId())).sum();
+            // 判断是否可用
+            Discount discount = DiscountStrategy.getDiscount(coupon.getDiscountType());
+            boolean canUse = discount.canUse(totalAmount, coupon);
+            if (!canUse) {
+                continue;
+            }
+            // 计算优惠金额
+            int discountAmount = discount.calculateDiscount(totalAmount, coupon);
+            // 计算优惠明细
+            calculateDiscountDetails(detailMap, availableCourses, totalAmount, discountAmount);
+            // 更新DTO数据
+            dto.getIds().add(coupon.getCreater());
+            dto.getRules().add(discount.getRule(coupon));
+            dto.setDiscountAmount(dto.getDiscountAmount() + discountAmount);
+        }
+        return dto;
+    }
+
+    private void calculateDiscountDetails(Map<Long, Integer> detailMap, List<OrderCourseDTO> courses, int totalAmount,
+                                          int discountAmount) {
+         int times = 0;
+         int remainDiscount = discountAmount;
+         for (OrderCourseDTO c : courses) {
+             times++;
+             int discount = 0;
+             if (times == courses.size()) {
+                 discount = remainDiscount;
+             } else {
+                 discount = discountAmount * c.getPrice() / totalAmount;
+                 remainDiscount -= discount;
+             }
+             detailMap.put(c.getId(), discount + detailMap.get(c.getId()));
+         }
     }
 }
