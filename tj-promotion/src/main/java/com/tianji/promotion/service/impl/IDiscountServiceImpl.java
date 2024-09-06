@@ -15,15 +15,22 @@ import com.tianji.promotion.strategy.discount.Discount;
 import com.tianji.promotion.strategy.discount.DiscountStrategy;
 import com.tianji.promotion.utils.PermuteUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
+@Slf4j
 public class IDiscountServiceImpl implements IDiscountService {
 
     private final UserCouponMapper userCouponMapper;
     private final ICouponScopeService scopeService;
+    private final Executor discountSolutionExecutor;
 
     @Override
     public List<CouponDiscountDTO> findDiscountSolution(List<OrderCourseDTO> orderCourses) {
@@ -56,8 +63,24 @@ public class IDiscountServiceImpl implements IDiscountService {
         }
         // 计算方案的优惠明细
         List<CouponDiscountDTO> list = Collections.synchronizedList(new ArrayList<>(solutions.size()));
+        // 定义闭锁
+        CountDownLatch latch = new CountDownLatch(solutions.size());
         for (List<Coupon> solution : solutions) {
-            list.add(calculateSolutionDiscount(availableCouponMap, orderCourses, solution));
+            // 异步计算
+            CompletableFuture.supplyAsync(
+                    () -> calculateSolutionDiscount(availableCouponMap, orderCourses, solution),
+                    discountSolutionExecutor
+            ).thenAccept(dto -> {
+                // 提交任务结果
+                list.add(dto);
+                latch.countDown();
+            });
+        }
+        // 等待运算结束
+        try {
+            latch.await(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            log.error("优惠方案计算被中断，{}", e.getMessage());
         }
     }
 
