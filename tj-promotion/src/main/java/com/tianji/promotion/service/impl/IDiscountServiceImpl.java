@@ -1,13 +1,11 @@
 package com.tianji.promotion.service.impl;
 
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.tianji.common.utils.CollUtils;
 import com.tianji.common.utils.UserContext;
 import com.tianji.promotion.domain.dto.CouponDiscountDTO;
 import com.tianji.promotion.domain.dto.OrderCourseDTO;
 import com.tianji.promotion.domain.po.Coupon;
 import com.tianji.promotion.domain.po.CouponScope;
-import com.tianji.promotion.enums.DiscountType;
 import com.tianji.promotion.mapper.UserCouponMapper;
 import com.tianji.promotion.service.ICouponScopeService;
 import com.tianji.promotion.service.IDiscountService;
@@ -82,6 +80,8 @@ public class IDiscountServiceImpl implements IDiscountService {
         } catch (InterruptedException e) {
             log.error("优惠方案计算被中断，{}", e.getMessage());
         }
+        // 5.筛选最优解
+        return findBestSolution(list);
     }
 
     private Map<Coupon, List<OrderCourseDTO>> findAvailableCoupon(List<Coupon> coupons, List<OrderCourseDTO> courses) {
@@ -153,5 +153,37 @@ public class IDiscountServiceImpl implements IDiscountService {
              }
              detailMap.put(c.getId(), discount + detailMap.get(c.getId()));
          }
+    }
+
+    private List<CouponDiscountDTO> findBestSolution(List<CouponDiscountDTO> solutions) {
+        // 准备Map记录最优解
+        Map<String, CouponDiscountDTO> moreDiscountMap = new HashMap<>();
+        Map<Integer, CouponDiscountDTO> lessCouponMap = new HashMap<>();
+        // 遍历，筛选最优解
+        for (CouponDiscountDTO solution : solutions) {
+            // 计算当前方案的id组合
+            String ids = solution.getIds().stream()
+                    .sorted(Long::compare).map(String::valueOf).collect(Collectors.joining(","));
+            // 比较用券相同时，优惠金额是否最大
+            CouponDiscountDTO best = moreDiscountMap.get(ids);
+            if (best != null && best.getDiscountAmount() >= solution.getDiscountAmount()) {
+                continue;
+            }
+            // 比较金额相同时，用券数量是否最少
+            best = lessCouponMap.get(solution.getDiscountAmount());
+            int size = solution.getIds().size();
+            if (size > 1 && best != null && best.getIds().size() <= size) {
+                continue;
+            }
+            // 更新最优解
+            moreDiscountMap.put(ids, solution);
+            lessCouponMap.put(solution.getDiscountAmount(), solution);
+        }
+        // 求交集
+        Collection<CouponDiscountDTO> bestSolutions = CollUtils.intersection(moreDiscountMap.values(), lessCouponMap.values());
+        // 排序，按优惠金额降序
+        return bestSolutions.stream()
+                .sorted(Comparator.comparingInt(CouponDiscountDTO::getDiscountAmount).reversed())
+                .collect(Collectors.toList());
     }
 }
