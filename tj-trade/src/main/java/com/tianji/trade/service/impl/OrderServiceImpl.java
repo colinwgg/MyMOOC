@@ -4,8 +4,12 @@ import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.tianji.api.client.course.CourseClient;
+import com.tianji.api.client.promotion.PromotionClient;
 import com.tianji.api.constants.CourseStatus;
 import com.tianji.api.dto.course.CourseSimpleInfoDTO;
+import com.tianji.api.dto.promotion.CouponDiscountDTO;
+import com.tianji.api.dto.promotion.OrderCouponDTO;
+import com.tianji.api.dto.promotion.OrderCourseDTO;
 import com.tianji.api.dto.trade.OrderBasicDTO;
 import com.tianji.common.autoconfigure.mq.RabbitMqHelper;
 import com.tianji.common.constants.MqConstants;
@@ -62,6 +66,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     private final ICartService cartService;
     private final TradeProperties tradeProperties;
     private final RabbitMqHelper rabbitMqHelper;
+    private final PromotionClient promotionClient;
 
     @Override
     @Transactional
@@ -74,8 +79,20 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         // 2.1.计算订单金额
         Integer totalAmount = courseInfos.stream()
                 .map(CourseSimpleInfoDTO::getPrice).reduce(Integer::sum).orElse(0);
-        // TODO 2.2.计算优惠金额
+        // 2.2.计算优惠金额
         order.setDiscountAmount(0);
+        List<Long> couponIds = placeOrderDTO.getCouponIds();
+        CouponDiscountDTO discount = null;
+        if (CollUtils.isNotEmpty(couponIds)) {
+            List<OrderCourseDTO> orderCourses = courseInfos.stream()
+                    .map(c -> new OrderCourseDTO().setId(c.getId()).setCateId(c.getThirdCateId()).setPrice(c.getPrice()))
+                    .collect(Collectors.toList());
+            discount = promotionClient.queryDiscountDetailByOrder(new OrderCouponDTO(couponIds, orderCourses));
+            if (discount != null) {
+                order.setDiscountAmount(discount.getDiscountAmount());
+                order.setCouponIds(couponIds);
+            }
+        }
         Integer realAmount = totalAmount - order.getDiscountAmount();
         // 2.3.封装其它信息
         order.setUserId(userId);
@@ -90,7 +107,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         // 3.封装订单详情
         List<OrderDetail> orderDetails = new ArrayList<>(courseInfos.size());
         for (CourseSimpleInfoDTO courseInfo : courseInfos) {
-            orderDetails.add(packageOrderDetail(courseInfo, order));
+            Integer discountValue = discount != null ?
+                    discount.getDiscountDetail().getOrDefault(courseInfo.getId(), 0) : 0;
+            orderDetails.add(packageOrderDetail(courseInfo, order, discountValue));
         }
 
         // 4.写入数据库
@@ -158,7 +177,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setId(orderId);
 
         // 3.订单详情
-        OrderDetail detail = packageOrderDetail(courseInfo, order);
+        OrderDetail detail = packageOrderDetail(courseInfo, order, 0);
 
         // 4.写入数据库
         saveOrderAndDetails(order, CollUtils.singletonList(detail));
@@ -205,7 +224,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         return vo;
     }
 
-    private OrderDetail packageOrderDetail(CourseSimpleInfoDTO courseInfo, Order order) {
+    private OrderDetail packageOrderDetail(CourseSimpleInfoDTO courseInfo, Order order, Integer discountValue) {
         OrderDetail detail = new OrderDetail();
         detail.setUserId(order.getUserId());
         detail.setOrderId(order.getId());
@@ -215,7 +234,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         detail.setCoverUrl(courseInfo.getCoverUrl());
         detail.setName(courseInfo.getName());
         detail.setValidDuration(courseInfo.getValidDuration());
-        detail.setDiscountAmount(0);// TODO 计算优惠金额
+        detail.setDiscountAmount(discountValue);// 计算优惠金额
         detail.setRealPayAmount(courseInfo.getPrice() - detail.getDiscountAmount());
         return detail;
     }

@@ -1,4 +1,4 @@
-package com.tianji.promotion.domain.dto;
+package com.tianji.api.dto.promotion;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
