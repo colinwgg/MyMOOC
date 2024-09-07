@@ -211,15 +211,17 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         List<OrderCourseVO> courses = BeanUtils.copyList(courseInfos, OrderCourseVO.class);
         // 2.计算总价
         int total = courseInfos.stream().mapToInt(CourseSimpleInfoDTO::getPrice).sum();
-        // TODO 3.计算折扣
-        int discountAmount = 0;
+        // 计算折扣方案
+        List<CouponDiscountDTO> discount = promotionClient.findDiscountSolution(courseInfos.stream()
+                .map(c -> new OrderCourseDTO().setId(c.getId()).setCateId(c.getThirdCateId()).setPrice(c.getPrice()))
+                .collect(Collectors.toList()));
         // 4.生成订单id
         long orderId = IdWorker.getId();
         // 5.组织返回
         OrderConfirmVO vo = new OrderConfirmVO();
         vo.setOrderId(orderId);
         vo.setTotalAmount(total);
-        vo.setDiscountAmount(discountAmount);
+        vo.setDiscount(discount);
         vo.setCourses(courses);
         return vo;
     }
