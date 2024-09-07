@@ -5,9 +5,12 @@ import com.tianji.api.dto.promotion.CouponDiscountDTO;
 import com.tianji.api.dto.promotion.OrderCouponDTO;
 import com.tianji.api.dto.promotion.OrderCourseDTO;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -20,4 +23,8 @@ public interface PromotionClient {
     @ApiOperation("根据券方案计算订单优惠明细")
     @PostMapping("/user-coupons/discount")
     CouponDiscountDTO queryDiscountDetailByOrder(@RequestBody OrderCouponDTO orderCouponDTO);
+
+    @ApiOperation("核销指定优惠券")
+    @PutMapping("/user-coupons/use")
+    void writeOffCoupon(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
 }

@@ -11,6 +11,7 @@ import com.tianji.promotion.service.IDiscountService;
 import com.tianji.promotion.service.IUserCouponService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,5 +62,11 @@ public class UserCouponController {
     @PostMapping("/discount")
     public CouponDiscountDTO queryDiscountDetailByOrder(@RequestBody OrderCouponDTO orderCouponDTO){
         return discountService.queryDiscountDetailByOrder(orderCouponDTO);
+    }
+
+    @ApiOperation("核销指定优惠券")
+    @PutMapping("/use")
+    public void writeOffCoupon(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
+        userCouponService.writeOffCoupon(userCouponIds);
     }
 }

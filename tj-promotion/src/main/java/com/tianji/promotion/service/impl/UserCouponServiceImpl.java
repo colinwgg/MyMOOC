@@ -9,6 +9,7 @@ import com.tianji.common.autoconfigure.redisson.annotations.Lock;
 import com.tianji.common.constants.MqConstants;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.common.exceptions.BizIllegalException;
+import com.tianji.common.exceptions.DbException;
 import com.tianji.common.utils.BeanUtils;
 import com.tianji.common.utils.CollUtils;
 import com.tianji.common.utils.NumberUtils;
@@ -21,6 +22,7 @@ import com.tianji.promotion.domain.po.UserCoupon;
 import com.tianji.promotion.domain.query.UserCouponQuery;
 import com.tianji.promotion.domain.vo.CouponVO;
 import com.tianji.promotion.enums.ExchangeCodeStatus;
+import com.tianji.promotion.enums.UserCouponStatus;
 import com.tianji.promotion.mapper.CouponMapper;
 import com.tianji.promotion.mapper.UserCouponMapper;
 import com.tianji.promotion.service.IExchangeCodeService;
@@ -125,6 +127,49 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         Set<Long> couponIds = records.stream().map(UserCoupon::getCouponId).collect(Collectors.toSet());
         List<Coupon> coupons = couponMapper.selectBatchIds(couponIds);
         return PageDTO.of(page, BeanUtils.copyList(coupons, CouponVO.class));
+    }
+
+    @Override
+    @Transactional
+    public void writeOffCoupon(List<Long> userCouponIds) {
+        // 查询优惠券
+        List<UserCoupon> userCoupons = listByIds(userCouponIds);
+        if (CollUtils.isEmpty(userCoupons)) {
+            return;
+        }
+        // 处理数据
+        List<UserCoupon> list = userCoupons.stream()
+                // 过滤无效券
+                .filter(coupon -> {
+                    if (coupon == null) {
+                        return false;
+                    }
+                    if (UserCouponStatus.UNUSED != coupon.getStatus()) {
+                        return false;
+                    }
+                    LocalDateTime now = LocalDateTime.now();
+                    return !now.isBefore(coupon.getTermBeginTime()) && !now.isAfter(coupon.getTermEndTime());
+                })
+                // 组织新增数据
+                .map(coupon -> {
+                    UserCoupon c = new UserCoupon();
+                    c.setId(coupon.getId());
+                    c.setStatus(UserCouponStatus.USED);
+                    return c;
+                })
+                .collect(Collectors.toList());
+
+        // 核销，修改优惠券状态
+        boolean success = updateBatchById(list);
+        if (!success) {
+            return;
+        }
+        // 更新已使用数量
+        List<Long> couponIds = userCoupons.stream().map(UserCoupon::getCouponId).collect(Collectors.toList());
+        int c = couponMapper.incrUsedNum(couponIds, 1);
+        if (c < 1) {
+            throw new DbException("更新优惠券使用数量失败！");
+        }
     }
 
     @Override
