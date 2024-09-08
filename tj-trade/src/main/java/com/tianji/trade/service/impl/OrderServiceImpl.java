@@ -376,6 +376,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         vo.setDetails(dvs);
         // 3.3.订单进度
         vo.setProgressNodes(detailService.packageProgressNodes(order, null));
+        // 3.4.优惠明细
+        List<String> rules = promotionClient.queryDiscountRules(order.getCouponIds());
+        vo.setCouponDesc(String.join("/", rules));
         return vo;
     }
 

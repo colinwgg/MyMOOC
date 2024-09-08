@@ -27,6 +27,7 @@ import com.tianji.promotion.mapper.CouponMapper;
 import com.tianji.promotion.mapper.UserCouponMapper;
 import com.tianji.promotion.service.IExchangeCodeService;
 import com.tianji.promotion.service.IUserCouponService;
+import com.tianji.promotion.strategy.discount.DiscountStrategy;
 import com.tianji.promotion.utils.CodeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
@@ -201,6 +202,17 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
         if (c < 1) {
             throw new DbException("更新优惠券使用数量失败！");
         }
+    }
+
+    @Override
+    public List<String> queryDiscountRules(List<Long> userCouponIds) {
+        List<Coupon> coupons = baseMapper.queryCouponByUserCouponIds(userCouponIds, UserCouponStatus.USED);
+        if (CollUtils.isEmpty(coupons)) {
+            return CollUtils.emptyList();
+        }
+        return coupons.stream()
+                .map(c -> DiscountStrategy.getDiscount(c.getDiscountType()).getRule(c))
+                .collect(Collectors.toList());
     }
 
     @Override
