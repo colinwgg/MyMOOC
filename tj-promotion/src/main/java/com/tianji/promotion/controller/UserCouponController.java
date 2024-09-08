@@ -69,4 +69,10 @@ public class UserCouponController {
     public void writeOffCoupon(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
         userCouponService.writeOffCoupon(userCouponIds);
     }
+
+    @ApiOperation("退还指定优惠券")
+    @PutMapping("/refund")
+    public void refundCoupon(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds){
+        userCouponService.refundCoupon(userCouponIds);
+    }
 }

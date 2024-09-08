@@ -27,4 +27,8 @@ public interface PromotionClient {
     @ApiOperation("核销指定优惠券")
     @PutMapping("/user-coupons/use")
     void writeOffCoupon(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
+
+    @ApiOperation("退还指定优惠券")
+    @PutMapping("/user-coupons/refund")
+    void refundCoupon(@ApiParam("用户优惠券id集合") @RequestParam("couponIds") List<Long> userCouponIds);
 }

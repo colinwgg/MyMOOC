@@ -173,6 +173,37 @@ public class UserCouponServiceImpl extends ServiceImpl<UserCouponMapper, UserCou
     }
 
     @Override
+    @Transactional
+    public void refundCoupon(List<Long> userCouponIds) {
+        List<UserCoupon> userCoupons = listByIds(userCouponIds);
+        if (CollUtils.isEmpty(userCoupons)) {
+            return;
+        }
+        // 处理优惠券数据
+        List<UserCoupon> list = userCoupons.stream()
+                .filter(uc -> uc != null && uc.getStatus() == UserCouponStatus.USED)
+                .map(uc -> {
+                    UserCoupon c = new UserCoupon();
+                    c.setId(uc.getId());
+                    LocalDateTime now = LocalDateTime.now();
+                    // 判断有效期，是否已经过期，如果过期，则状态为 已过期，否则状态为 未使用
+                    UserCouponStatus status = now.isAfter(uc.getTermEndTime()) ? UserCouponStatus.EXPIRED : UserCouponStatus.UNUSED;
+                    uc.setStatus(status);
+                    return c;
+                }).collect(Collectors.toList());
+        // 修改优惠券状态
+        boolean success = updateBatchById(list);
+        if (!success) {
+            return;
+        }
+        List<Long> couponIds = userCoupons.stream().map(UserCoupon::getCouponId).collect(Collectors.toList());
+        int c = couponMapper.incrUsedNum(couponIds, -1);
+        if (c < 1) {
+            throw new DbException("更新优惠券使用数量失败！");
+        }
+    }
+
+    @Override
     @Lock(name = "lock:coupon:#{T(com.tianji.common.utils.UserContext).getUser()}")
     @Transactional
     public void exchangeCoupon(String code) {
